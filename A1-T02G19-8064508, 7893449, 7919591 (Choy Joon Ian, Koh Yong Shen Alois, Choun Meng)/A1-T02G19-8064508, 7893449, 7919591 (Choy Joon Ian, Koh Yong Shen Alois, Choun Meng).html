@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>A1-T02G19-UOWID1, UOWID2, UOWID3 (Name1, Name2, Name3)</title>
+
+        <!-- Styling for CSS-->
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+            }
+            #main {
+                display: flex;
+                flex-direction: column;
+                margin-left: auto;
+                margin-right: auto;
+                padding: 20px 100px 20px 100px;
+                max-width: 1400px;
+                
+            }
+            .question-num {
+                padding-bottom: 20px;
+                color: dimgrey;
+                text-decoration: underline;
+            }
+
+            .Q1 {
+                font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+            }
+            .table1 th {
+                font-weight: bolder;
+                background-color: #deeaf6;
+            }
+            .table1 th, .table1 td, .table1 tr {
+                padding: 10px 25px 10px 5px;
+            }
+            .table2-list {
+                padding: 10px 10px 10px 40px;
+            }
+            .table2-img {
+                width: 130px;
+                height: 120px;
+                padding: 10px 15px 20px 20px;
+            }
+            .table2-text {
+                padding-left: 20px;
+            }
+            .table3-li {
+                list-style-type: none;
+                padding-left: 40px;
+            }
+            .table3a {
+                margin-left: 40px;
+            }
+            .table3a td {
+                text-align: left;
+                width: 180px;
+            }
+            .table3a-li {
+                list-style: none;
+            }
+            .part4-buttons {
+                width: 49%;
+            }
+            .table4 {
+                border: 1px solid black;
+                border-collapse: collapse;
+                width: 100%;
+            }
+            .table4 td{
+                padding: 5px;
+            }
+            .t4-border {
+                border-bottom: 1px solid black;
+                padding-top: 10px;
+            }
+            .table4-attri-name-col {
+                width: 20%;
+            }
+            .table4 textarea {
+                resize: none;
+            }
+            #getCurrDate {
+                width: 200px; /* Adjust the width as needed */
+            }
+            #reset-btn, #translate-btn {
+                width: 80px;
+            }
+            #reset-btn, #translate-btn, #find-btn {
+                text-align: center;
+                padding: 2px;
+            }
+
+            /* Handling Error Message*/
+            #nameError, #moduleCodeError{
+                color: rgb(5, 5, 113);
+            }
+            #displayCount {
+                margin-left: 57px;
+            }
+
+
+        </style>
+
+        <!-- Scripts for Js-->
+        <script>
+            /* onClick Translate Button
+                - validate name text field
+                - */
+            function translateText(event) {
+                event.preventDefault();  // Prevent the default form submission behavior
+
+                var isNameValid = validateName();
+                var isModuleCodeValid = validateModuleCode();
+
+                // Check if both name and module code are valid
+                if (isNameValid && isModuleCodeValid) {
+                    translateUsingURL();  // Proceed to translate using Google Translate URL
+                } else {
+                    // Display an error message for invalid module code
+                    if (!isModuleCodeValid) {
+                        document.getElementById("moduleCodeError").innerHTML = " Invalid module code!";
+                    }
+                }
+
+                return false;  // Return false to prevent form submission
+            }
+
+
+
+            function findAndReplace() {
+                var replacementsCount = wordReplace();
+                // Update the displayCount element
+                var displayCountElement = document.getElementById("displayCount");
+                displayCountElement.innerText = "No. of text replaced: " + replacementsCount;
+            }
+
+
+
+
+            /* Input Name Text-Field:
+            -       next box must be not empty 
+            -       validate with regex:
+                        -> no numerical digit
+                        -> special char allowed #!@*()^&%
+            */
+            function validateName() {
+
+                var text = document.getElementById("inputName").value;  // get current value from HTML form element
+                
+                // Check if the input is empty
+                if (text.trim() === '') {
+                    //window.alert("Please enter a name!");
+                    document.getElementById("nameError").innerHTML = " Name is required";
+                    return false;  // Input is invalid
+                }
+
+                // Define a regex pattern allowing special characters #!@*()^&% and disallowing numerical digits
+                var regexPattern = /^[^\d]*[#!@*()^&%]*[^\d]*$/;
+
+                // Check if the input matches the regex pattern
+                if (!regexPattern.test(text)) {
+                    window.alert("Invalid characters in the name. Please use only allowed special characters. E.g., [ #!@*()^&%]");
+                    document.getElementById("nameError").innerHTML = " Invalid characters! ";
+                    return false;  // Input is invalid
+                }
+                document.getElementById("nameError").innerHTML = "";  // Clear the error message if it's valid
+                console.log("Name: " + text + " is successfully submitted!");
+
+                // Input is valid
+                return true;
+            }
+
+
+            /* Input Module Code Text-Field:
+                -       textbox can be empty, optional
+                -       textbox max length 6 characters
+                -       Mod Code must start with 3 digits in the range of [0 to 5] and end with 3 lower case alphabets
+            */
+            function validateModuleCode() {
+                var moduleCode = document.getElementById("inputModCode").value;
+
+                // Check if the input is empty or contains only spaces
+                if (moduleCode.trim() === '') {
+                    document.getElementById("moduleCodeError").innerHTML = '';  // Clear any previous error message
+                    return true;  // Input is optional and considered valid if empty
+                }
+
+                var regexPattern = /^[0-5]{3}[a-z]{3}$/;
+
+                if (!regexPattern.test(moduleCode)) {
+                    document.getElementById("moduleCodeError").innerHTML = " Invalid module code!";
+                    return false;
+                }
+                document.getElementById("moduleCodeError").innerHTML = "";  // Clear the error message if it's valid
+                console.log("Module code submitted: " + moduleCode);
+
+                return true;  // Input is valid
+            }
+
+            /* Toggle Replace Text-Field
+            -   Replace: a text box for the user to key in the replacement text. If the find text is empty, this 
+                element should be disabled (i.e. user cannot key in anything here)
+            */
+            function toggleReplaceInput() {
+                var inputFind = document.getElementById("inputFind");
+                var inputReplace = document.getElementById("inputReplace");
+
+                // Enable/Disable the "Replace" text box based on the "Find" input
+                inputReplace.disabled = inputFind.value.trim() === '';
+            }
+
+
+            function findAndReplace() {
+                var replacementsCount = wordReplace();
+                // Update the displayCount element
+                var displayCountElement = document.getElementById("displayCount");
+                displayCountElement.innerText = "No. of text replaced: " + replacementsCount;
+            }
+
+            function wordReplace() {
+                var textArea = document.getElementById("messageTextArea");
+                var find = document.getElementById("inputFind").value;
+                var replace = document.getElementById("inputReplace").value;
+
+                // Get the current content of the text area
+                var text = textArea.value;
+
+                // Create a regular expression with 'gi' flags for global and case-insensitive replacement
+                var regex = new RegExp(find, 'gi');
+
+                // Perform find and replace globally and case-insensitive
+                var replacedText = text.replace(regex, function (match, offset, original) {
+                    return replace; // Replace with the desired replacement text
+                });
+
+                // Set the updated content back to the text area
+                textArea.value = replacedText;
+
+                // Count the number of replacements
+                var replacementsCount = (text.match(regex) || []).length;
+
+                return replacementsCount;
+            }
+
+            /* Gets Read-Only Current Date */
+            function getCurrDate() {
+                var date = new Date();
+                
+                var day = String(date.getDate());
+                var month = date.toLocaleString('en-SG', { month: 'long' });
+                var year = String(date.getFullYear()).slice(-2);
+                var dayOfWeek = date.toLocaleString('en-SG', { weekday: 'long' });
+
+                var hours = String(date.getHours()).padStart(2, '0');
+                var ampm = (date.getHours() >= 12) ? 'PM' : 'AM';
+                var formattedHours = (date.getHours() % 12) || 12;
+                var minutes = String(date.getMinutes()).padStart(2, '0');
+
+                var formattedDate = `${day} ${month} ${year} ${dayOfWeek} ${formattedHours}:${minutes} ${ampm}`;
+
+                // Set the formatted date to the element with ID 'getCurrDate'
+                document.getElementById('getCurrDate').value = formattedDate;
+            }
+
+            window.onload = function() {
+                getCurrDate(); // Fixed the syntax for calling the function
+            };
+
+
+            function translateUsingURL() {
+                var sourceLanguage = document.querySelector('input[name="sl"]:checked').value;
+                var targetLanguage = document.getElementById("selectTargetLanguage").value;
+                var text = document.getElementById("messageTextArea").value;
+
+                // Construct the URL with the desired parameters for Google Translate
+                var url = `https://translate.google.com/?sl=${encodeURIComponent(sourceLanguage)}&tl=${encodeURIComponent(targetLanguage)}&text=${encodeURIComponent(text)}`;
+
+                // Open the Google Translate URL in a new tab
+                window.open(url, '_blank');
+            }
+
+            /* onClikc Reset Button 
+                - reset all text field inside form
+                - Update the current date input again after resetting the for 
+                - reset replacement count */
+                
+            function resetReplacementCount() {
+                var displayCountElement = document.getElementById("displayCount");
+                displayCountElement.innerText = "";  // Clear the replacement count display
+            }
+
+            function resetForm() {
+            
+                var form = document.querySelector('form'); // Get a reference to the form               
+                form.reset();                              // Reset the form, which clears all the fields
+                getCurrDate();                             // Update currDate
+                resetReplacementCount();
+            }
+                
+                            
+        </script>
+    </head>
+    <body>
+        <div id="main">
+            <!-- Part 1 -->
+            <div id="Q1">
+                <h1 class="question-num">Part 1:</h1>
+                <br>
+                <div class="part1-container">
+                    <table class="table1" border="1">
+                        <tr>
+                            <th colspan="3">CSIT128: Assignment 1</th>
+                            <th>Group T02G19</th>
+                        </tr>
+                        <tr>
+                            <td rowspan="3">Student Number/ <br>Name/ Email</td>
+                            <td>8064508</td>
+                            <td width="30%">Choy Joon Ian</td>
+                            <td>jic175@uowmail.edu.au</td>
+                        </tr>
+                        <tr>
+                            <td>7893449</td>
+                            <td>Koh Yong Shen Alois</td>
+                            <td>ysak905@uowmail.edu.au</td>
+                        </tr>
+                        <tr>
+                            <td>7919591</td>
+                            <td>Teo choun meng</td>
+                            <td>cmt866@uowmail.edu.au</td>
+                        </tr>
+                    </table>
+                    <br>
+                </div>
+            </div><!-- End of Part 1 -->
+            <hr>
+
+            <!-- Part 2 -->
+            <div id="Q2">
+                <h1 class="question-num">Part 2:</h1>
+                <table class="table2">
+                    <tr>
+                        <h1 style="width: 100%;">Part2: Hello World program in
+                            different languages</h1>
+                    </tr>
+                    <tr>
+                        <ul class="table2-list">
+                            <li><a href="#C++">C++</a></li>
+                            <li><a href="#C#">C#</a></li>
+                            <li><a href="#Python">Python</a></li>
+                            <li><a href="#HTML">HTML</a></li>
+                        </ul>
+                    </tr>
+                </table>
+                <hr>
+                <table class="table2">
+                    <tr>
+                        <h3 id="C++">C++</h3>
+                    </tr>
+                    <tr>
+                        <td><img class="table2-img" src="Images/CPP.png"
+                                alt="C++ Logo"></td>
+                        <td class="table2-text">
+                            <pre>
+#include &lt;iostream&gt;
+
+void main (  ) {
+        cout &lt;&lt; "Hello World!"  &lt;&lt; end1;
+}
+                        </pre>
+                        </td>
+                    </tr>
+                </table>
+                <hr>
+                <!-- table for #C-Sharp -->
+                <table class="table2">
+                    <tr>
+                        <h3 id="C#">C#</h3>
+                    </tr>
+                    <tr>
+                        <td><img class="table2-img" src="Images/CS.png"
+                                alt="Csharp Logo"></td>
+                        <td class="table2-text">
+                            <pre>
+using system;
+
+class program
+{
+        static void Main()
+        {   
+                Console.WriteLine("Hello, World!");
+        }
+}
+                        </pre>
+                        </td>
+                    </tr>
+                </table><!-- End table for #C-Sharp -->
+                <hr>
+
+                <!-- table for #Python -->
+                <table class="table2">
+                    <tr>
+                        <h3 id="Python">Python</h3>
+                    </tr>
+                    <tr>
+                        <td><img src="Images/Python-Language.jpg"
+                                alt="Python Logo" class="table2-img"></td>
+                        <td class="table2-text">
+                            <pre>
+# Hello World program in Python
+
+print("Hello World!")
+                            </pre>
+                        </td>
+                    </tr>
+                </table> <!-- End table for #Python-->
+                <hr>
+                <!-- Table for HTML -->
+                <table class="table2">
+                    <tr>
+                        <h3 id="HTML">HTML</h3>
+                    </tr>
+                    <tr>
+                        <td><img src="Images/HTML.png" class="table2-img"
+                                alt="HTML Logo"></td>
+                        <td class="table2-text">
+                            <pre>
+&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;Hello&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+Hello World!
+&lt;/body&gt;
+&lt;/html&gt;                            
+                        </pre>
+                        </td>
+                    </tr>
+                </table>
+                <br>
+                <br>
+                <hr>
+                <br>
+            </div> <!-- End of Part 2 -->
+
+            <!-- Part 3 -->
+            <div id="Q3">
+                <h1 class="question-num">Part 3:</h1>
+                <br>
+                <br>
+                <table class="table3">
+                    <tr>
+                        <h1>Part3: University policies and services</h1>
+                    </tr>
+                    <tr>
+
+                        <br>
+                        <h4>PLAGIARISM</h4>
+                        <ul>
+                            <li class="table3-li">Plagiarism is treated
+                                seriosuly. If we
+                                suspect any work is copied, all students
+                                invloved are likely to receive zero</li>
+                            <li class="table3-li">for the entire assignment.
+                                Plagiarism has
+                                led to students being expelled from the
+                                University.</li>
+                            <li class="table3-li">Please click <a
+                                    href="https://www.uow.edu.au/student/support-services/learning-development/plagiarism/"
+                                    target="_blank">here</a>
+                                to read more about Plagiarism.</li>
+                        </ul>
+                        <br>
+                    </tr>
+                    <tr>
+                        <h4>ACADEMIC CONSIDERATION</h4>
+                        <ul>
+                            <li class="table3-li">We know that life isn't
+                                perfect and there may be a time when you can't
+                                hand in an assignment on time, or make it</li>
+                            <li class="table3-li">to class or an exam. If you
+                                find yourself in a situation like this, you may
+                                be eligible for Academic Consideration.</li>
+                            <li class="table3-li">Academic Consideration is
+                                designed to help students when they are sick,
+                                injuried, or where a serious, unplanned</li>
+                            <li class="table3-li">situation has occurred that
+                                has affected their ability to study.</li>
+                            <li class="table3-li">Please click <a
+                                    href="https://www.uow.edu.au/student/admin/academic-consideration/portal/"
+                                    target="_blank">here</a> to read more about
+                                Academic Consideration.</li>
+                        </ul>
+                        <br>
+                    </tr>
+                    <tr>
+                        <h4>STUDENT SUPPORT ADVISERS</h4>
+                        <ul>
+                            <li class="table3-li">If you have an issue or a
+                                problem that is affecting your study, then the
+                                Student Support Advisers may be able to</li>
+                            <li class="table3-li">help. There are Student
+                                Support Advisers available to assist students
+                                who are studying at all UOW campuses and</li>
+                            <li class="table3-li">in all UOW Faculties.</li>
+                            <li class="table3-li">Please click <a
+                                    href="https://www.uow.edu.au/student/support-services/advisers/"
+                                    target="_blank">here</a> to read more about
+                                Student Support Advisers.</li>
+                            <br>
+                            <li class="table3-li">Student Support Adviser
+                                contact details for Faculty of Engineering and
+                                Information Sciences:</li>
+                        </ul>
+                        <table class="table3a" border="1">
+                            <tr>
+                                <td>
+                                    <ul>
+                                        <li class="table3a-li"><b>Ann-Maree
+                                                Smith</b></li>
+                                        <li class="table3a-li">Bld 40: 133,
+                                            Wollongong</li>
+                                        <li class="table3a-li">Campus</li>
+                                        <li class="table3a-li">(02) 4221 4714</li>
+                                        <li class="table3a-li">Mon - Fri</li>
+                                        <li class="table3a-li">ams@uow.edu.au</li>
+                                    </ul>
+                                </td>
+                                <td>
+                                    <ul>
+                                        <li class="table3a-li"><b>Mitz Perez</b></li>
+                                        <li class="table3a-li">Bld 4: 105,
+                                            Wollongong</li>
+                                        <li class="table3a-li">Campus</li>
+                                        <li class="table3a-li">(02) 4221 3833</li>
+                                        <li class="table3a-li">Mon - Fri</li>
+                                        <li class="table3a-li">mperez@uow.edu.au</li>
+                                    </ul>
+                                </td>
+                            </tr>
+                        </table>
+                    </tr>
+                    <br>
+                    <tr>
+                        <h4>DISABILITY SERVICES</h4>
+                        <ul>
+                            <li class="table3-li">Disability Services provide
+                                and support for students with a disabilities or
+                                health condition. Our aim is to</li>
+                            <li class="table3-li">ensure students with a
+                                disability realise their full potential. We also
+                                provide support for those who are</li>
+                            <li class="table3-li">the primary carers for those
+                                with a medical condition or disabiliy.</li>
+                            <li class="table3-li">Please click <a
+                                    href="https://www.uow.edu.au/student/support-services/disability/"
+                                    target="blank">here</a> to read more about
+                                Disability Services.</li>
+                        </ul>
+                    </tr>
+                    <br><br><br><br>
+                </table>
+            </div><!-- End of Part 3-->
+            <hr>
+
+            <!-- Part 4-->
+            <div id="Q4">
+                <h1 class="question-num">Part 4:</h1>
+                <br>
+                <div class="table4-div">
+                    <form>
+                        <table class="table4">
+                            <tr>
+                                <td class="table4-attri-name-col">
+                                    <h3>Part 4:</h3>
+                                    <br>
+                                </td>
+                            </tr>
+                            <!-- Section 1-->
+                            <!-- Name text-filed Row -->
+                            <tr>
+                                <td class="table4-attri-name-col">
+                                    <label for="inputName">Name: </label>
+                                </td>
+                                <td><input type="text" id="inputName"
+                                        name="name"
+                                        placeholder=" Enter a name"
+                                        required><span class="error"
+                                        id="nameError"></span>
+                                </td>
+                            </tr> <!-- End of Name row-->
+
+                            <!-- Module Code Row-->
+                            <tr>
+                                <td class="table4-attri-name-col">
+                                    <label for="inputModCode">Module Code:</label>
+                                </td>
+                                <td><input type="text" id="inputModCode"
+                                        name="moduleCode" placeholder="102sit"
+                                        maxlength="6">
+                                    <span class="error" id="moduleCodeError"></span>
+                                </td>
+                            </tr> <!-- End of Module Code Row -->
+
+                            <!-- Current Date Row-->
+                            <tr>
+                                <td class="table4-attri-name-col">
+                                    <label for="getCurrDate">Current Date:</label>
+                                </td>
+                                <td><input type="text" id="getCurrDate" readonly></td>
+                            </tr>
+
+                            <!-- Section 1 break line -->
+                            <tr>
+                                <td class="t4-border" colspan="100%"></td>
+                            </tr>
+
+                            <!-- Section 2 -->
+                            <!-- Message Text Area-->
+                            <form action="https://translate.google.com"
+                                method="get" id="googleTranslateForm">
+                                <tr>
+                                    <td class="table4-attri-name-col">
+                                        <label for="messageTextArea">Message:</label>
+                                    </td>
+                                    <td><br><textarea name="text"
+                                            id="messageTextArea" cols="20"
+                                            rows="3"
+                                            placeholder="Enter Text" required>Hello
+                                            202309</textarea></td>
+                                </tr>
+
+                                <!-- Find and Replace Row-->
+                                <tr>
+                                    <td class="table4-attri-name-col">
+                                        <label for="inputFind">Find:</label>
+                                    </td>
+                                    <td><input type="text" id="inputFind"
+                                            name="find"
+                                            placeholder="Type to enable Replace"
+                                            oninput="toggleReplaceInput()">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="table4-attri-name-col">
+                                        <label for="inputReplace">Replace:</label>
+                                    </td>
+                                    <td><input type="text" id="inputReplace"
+                                            name="replace"
+                                            placeholder="Enter Replacement Text."
+                                            disabled>
+                                    </td>
+                                </tr>
+
+                                <!-- Find and Replace button-->
+                                <tr>
+                                    <td class="table4-attri-name-col"
+                                        colspan="2">
+                                        <button type="button"
+                                            onclick="findAndReplace()"
+                                            id="find-btn">Find
+                                            and
+                                            Replace</button><span
+                                            id="displayCount"></span>
+                                    </td>
+                                </tr>
+
+                                <!-- Section 2 break line -->
+                                <tr>
+                                    <td class="t4-border" colspan="100%"></td>
+                                </tr>
+
+                                <!-- Section 3 -->
+                                <!-- Source Language Radio Buttons -->
+                                <tr>
+                                    <td colspan="2">
+                                        <label for="selectSourceLanguage">Source
+                                            Language:</label>
+                                        <input type="radio"
+                                            id="selectSourceLanguage"
+                                            name="sl" value="en" checked>
+                                        <label for="selectSourceLanguage">English</label>
+                                        <input type="radio"
+                                            id="selectMalayLanguage"
+                                            name="sl" value="ms">
+                                        <label for="selectMalayLanguage">Malay</label>
+                                    </td>
+                                </tr>
+
+                                <!-- Target Language Drop down -->
+                                <tr>
+                                    <td colspan="2">
+                                        <label for="selectTargetLanguage">Target
+                                            Language:</label>
+                                        <select name="tl"
+                                            id="selectTargetLanguage">
+                                            <option value="zh-CN"
+                                                name="targetLanguage">Simplified
+                                                Chinese</option>
+                                            <option value="ms" name="tl">Malay</option>
+                                            <option value="ja" name="tl"
+                                                selected>Japanese</option>
+                                            <option value="ko" name="tl">Korean</option>
+                                        </select>
+                                    </td>
+                                </tr>
+
+                                <!-- Translate Button -->
+                                <tr>
+                                    <td colspan="2">
+                                        <button type="submit" id="translate-btn"
+                                            onclick="translateText(event)"
+                                            value="translate">Translate</button>
+
+                                    </td>
+                                </tr>
+
+                                <!-- Reset Button -->
+                                <tr>
+                                    <td colspan="2">
+                                        <button type="button" id="reset-btn"
+                                            onclick="resetForm()">Reset</button>
+                                    </td>
+                                </tr>
+                            </form>
+                        </table>
+                    </form>
+                </div>
+            </div> <!-- End of Part 4-->
+        </div>
+    </body>
+</html>
